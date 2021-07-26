@@ -30,7 +30,7 @@ class OrderPaymentRequestView(GenericAPIView):
         items = Item.objects.filter(order_id=order_id)
         user = order.user
         amount = 0
-        mobile = user.phone
+        mobile = "0" + str(user.phone)
         email = user.email
         for item in items:
             price = Price.objects.filter(product_id=item.product.pk).first()
@@ -80,6 +80,7 @@ class PaymentVerificationView(APIView):
         result = client.service.PaymentVerification(MERCHANT, authority, amount)
         if result.Status == 100:
             payment.verify = True
+            payment.ref_id = result.RefID
             payment.save()
             return Response({'ref_id': result.RefID}, status=status.HTTP_200_OK)
         if result.Status == 101:
