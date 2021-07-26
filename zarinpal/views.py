@@ -79,6 +79,8 @@ class PaymentVerificationView(APIView):
 
         result = client.service.PaymentVerification(MERCHANT, authority, amount)
         if result.Status == 100:
+            payment.verify = True
+            payment.save()
             return Response({'ref_id': result.RefID}, status=status.HTTP_200_OK)
         if result.Status == 101:
             return Response({'detail': 'already verified'}, status=status.HTTP_409_CONFLICT)
