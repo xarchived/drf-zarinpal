@@ -8,12 +8,10 @@ from rest_framework.views import APIView
 from zeep import Client
 
 from zarinpal.serializers import OrderPaymentSerializer
-from zarinpal.settings import MERCHANT, CALLBACK, REDIS_DB
+from zarinpal.settings import MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
 from purchase.models import Order, Payment, Product, Price, Item
 
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
-authorities = Redisary(db=REDIS_DB)
-
 
 class OrderPaymentRequestView(GenericAPIView):
     serializer_class = OrderPaymentSerializer
@@ -45,7 +43,7 @@ class OrderPaymentRequestView(GenericAPIView):
             CALLBACK,
         )
         # authorities[result.Authority] = serializer.validated_data['amount']
-        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority,verify=False)
+        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority, verify=False)
         payment.save()
 
         if result.Status == 100:
@@ -55,17 +53,16 @@ class OrderPaymentRequestView(GenericAPIView):
 
 class PaymentVerificationView(APIView):
     # noinspection PyMethodMayBeStatic
-    def get(self, request: Request) -> Response:
+    def get(self, request: Request) -> HttpResponse:
         status_code = request.GET.get('Status')
         authority = request.GET.get('Authority')
 
         if not status_code:
-            return Response({'detail': 'nothing provided'}, status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}')
         if status_code == 'NOK':
-            return Response({'detail': 'failed or canceled'}, status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code=NOK')
         if status_code != 'OK':
-            return Response({'detail': 'unknown status'}, status=status.HTTP_400_BAD_REQUEST)
-
+            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code={status_code}')
 
         # amount = authorities[authority]
 
@@ -82,7 +79,7 @@ class PaymentVerificationView(APIView):
             payment.verify = True
             payment.ref_id = result.RefID
             payment.save()
-            return Response({'ref_id': result.RefID}, status=status.HTTP_200_OK)
+            return HttpResponseRedirect(redirect_to=f'{SUCCESS_REDIRECT}?authority={result.Authority}')
         if result.Status == 101:
-            return Response({'detail': 'already verified'}, status=status.HTTP_409_CONFLICT)
-        return Response({'error_code': result.Status}, status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?error_code={result.Status}')
+        return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?error_code={result.Status}')
