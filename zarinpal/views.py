@@ -1,5 +1,4 @@
 from django.http import HttpResponseRedirect, HttpResponse
-from redisary import Redisary
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
@@ -7,11 +6,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from zeep import Client
 
+from purchase.models import Order, Payment, Price, Item
 from zarinpal.serializers import OrderPaymentSerializer
 from zarinpal.settings import MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
-from purchase.models import Order, Payment, Product, Price, Item
 
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
+
 
 class OrderPaymentRequestView(GenericAPIView):
     serializer_class = OrderPaymentSerializer
@@ -42,7 +42,7 @@ class OrderPaymentRequestView(GenericAPIView):
             mobile,
             CALLBACK,
         )
-        # authorities[result.Authority] = serializer.validated_data['amount']
+
         payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority, verify=False)
         payment.save()
 
@@ -63,8 +63,6 @@ class PaymentVerificationView(APIView):
             return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code=NOK')
         if status_code != 'OK':
             return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code={status_code}')
-
-        # amount = authorities[authority]
 
         amount = 0
         payment = Payment.objects.get(identity_token=authority)
