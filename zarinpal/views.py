@@ -74,7 +74,6 @@ class PaymentVerificationView(APIView):
 
         result = client.service.PaymentVerification(MERCHANT, authority, amount)
         if result.Status == 100:
-            payment.verify = True
             payment.ref_id = result.RefID
             payment.save()
             return HttpResponseRedirect(redirect_to=f'{SUCCESS_REDIRECT}?authority={result.Authority}')
