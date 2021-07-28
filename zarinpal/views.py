@@ -78,6 +78,4 @@ class PaymentVerificationView(APIView):
             payment.ref_id = result.RefID
             payment.save()
             return HttpResponseRedirect(redirect_to=f'{SUCCESS_REDIRECT}?authority={result.Authority}')
-        if result.Status == 101:
-            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?error_code={result.Status}')
         return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?error_code={result.Status}')
