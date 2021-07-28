@@ -23,12 +23,12 @@ class OrderPaymentRequestView(GenericAPIView):
         order_id = serializer.validated_data['order_id']
         order = Order.objects.get(pk=order_id)
         if order is None:
-            return Response({'error_msg': "invalid order id"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error_msg': 'invalid order id'}, status=status.HTTP_404_NOT_FOUND)
 
         items = Item.objects.filter(order_id=order_id)
         user = order.user
         amount = 0
-        mobile = "0" + str(user.phone)
+        mobile = '0' + str(user.phone)
         email = user.email
         for item in items:
             price = Price.objects.filter(product_id=item.product.pk).first()
