@@ -31,7 +31,7 @@ class OrderPaymentRequestView(GenericAPIView):
         mobile = '0' + str(user.phone)
         email = user.email
         for item in items:
-            price = Price.objects.filter(product_id=item.product.pk).first()
+            price = item.price
             amount = amount + price.amount
 
         result = client.service.PaymentRequest(
@@ -69,7 +69,7 @@ class PaymentVerificationView(APIView):
         order = Order.objects.get(pk=payment.order.pk)
         items = Item.objects.filter(order_id=order.pk)
         for item in items:
-            price = Price.objects.filter(product_id=item.product.pk).first()
+            price = item.price
             amount = amount + price.amount
 
         result = client.service.PaymentVerification(MERCHANT, authority, amount)
