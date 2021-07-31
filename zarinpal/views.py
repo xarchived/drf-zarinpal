@@ -27,12 +27,10 @@ class OrderPaymentRequestView(GenericAPIView):
 
         items = Item.objects.filter(order_id=order_id)
         user = order.user
-        amount = 0
+        # amount = 0
         mobile = '0' + str(user.phone)
         email = user.email
-        for item in items:
-            price = item.price
-            amount = amount + price.amount
+        amount = sum([item.price.amount for item in items])
 
         result = client.service.PaymentRequest(
             MERCHANT,
@@ -68,9 +66,7 @@ class PaymentVerificationView(APIView):
         payment = Payment.objects.get(identity_token=authority)
         order = Order.objects.get(pk=payment.order.pk)
         items = Item.objects.filter(order_id=order.pk)
-        for item in items:
-            price = item.price
-            amount = amount + price.amount
+        amount = sum([item.price.amount for item in items])
 
         result = client.service.PaymentVerification(MERCHANT, authority, amount)
         if result.Status == 100:
