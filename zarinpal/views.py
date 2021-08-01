@@ -1,11 +1,11 @@
 from django.http import HttpResponseRedirect, HttpResponse
-from rest_framework.exceptions import APIException
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from zeep import Client
 
 from purchase.models import Order, Payment
+from zarinpal.exceptions import OrderNotFoundError, PaymentError
 from zarinpal.serializers import OrderPaymentSerializer
 from zarinpal.settings import DESCRIPTION, MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
 from zarinpal.utils import calculate_total_amount
@@ -23,7 +23,7 @@ class OrderPaymentRequestView(GenericAPIView):
         order_id = serializer.validated_data['order_id']
         order = Order.objects.get(pk=order_id)
         if order is None:
-            raise APIException('Order not found')
+            raise OrderNotFoundError()
 
         user = order.user
         price = calculate_total_amount(order_id)
@@ -42,7 +42,7 @@ class OrderPaymentRequestView(GenericAPIView):
 
         if result.Status == 100:
             return HttpResponseRedirect(redirect_to=f'https://www.zarinpal.com/pg/StartPay/{result.Authority}')
-        raise APIException('Bad Request')
+        raise PaymentError(result.Status)
 
 
 class PaymentVerificationView(APIView):
