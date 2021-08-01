@@ -1,13 +1,11 @@
 from django.http import HttpResponseRedirect, HttpResponse
-from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from zeep import Client
 
-from purchase.models import Order, Payment, Price, Item
+from purchase.models import Order, Payment, Item
 from zarinpal.serializers import OrderPaymentSerializer
 from zarinpal.settings import MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
 
@@ -25,11 +23,9 @@ class OrderPaymentRequestView(GenericAPIView):
         order = Order.objects.get(pk=order_id)
         if order is None:
             raise APIException('Order not found')
-            # return Response({'error_msg': 'invalid order id'}, status=status.HTTP_404_NOT_FOUND)
 
         items = Item.objects.filter(order_id=order_id)
         user = order.user
-        # amount = 0
         mobile = '0' + str(user.phone)
         email = user.email
         amount = sum([item.price.amount for item in items])
@@ -49,7 +45,6 @@ class OrderPaymentRequestView(GenericAPIView):
         if result.Status == 100:
             return HttpResponseRedirect(redirect_to=f'https://www.zarinpal.com/pg/StartPay/{result.Authority}')
         raise APIException('Bad Request')
-        # return Response({'error_code': result.Status}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentVerificationView(APIView):
@@ -65,7 +60,6 @@ class PaymentVerificationView(APIView):
         if status_code != 'OK':
             return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code={status_code}')
 
-        # amount = 0
         payment = Payment.objects.get(identity_token=authority)
         order = Order.objects.get(pk=payment.order.pk)
         items = Item.objects.filter(order_id=order.pk)
