@@ -26,7 +26,6 @@ class OrderPaymentRequestView(GenericAPIView):
 
         items = Item.objects.filter(order_id=order_id)
         user = order.user
-        mobile = '0' + str(user.phone)
         email = user.email
         amount = sum([item.price.amount for item in items])
 
@@ -35,7 +34,7 @@ class OrderPaymentRequestView(GenericAPIView):
             amount,
             'description',
             email,
-            mobile,
+            f'0{user.phone}',
             CALLBACK,
         )
 
