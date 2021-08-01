@@ -7,7 +7,7 @@ from zeep import Client
 
 from purchase.models import Order, Payment
 from zarinpal.serializers import OrderPaymentSerializer
-from zarinpal.settings import MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
+from zarinpal.settings import DESCRIPTION, MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
 from zarinpal.utils import calculate_total_amount
 
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
@@ -31,7 +31,7 @@ class OrderPaymentRequestView(GenericAPIView):
         result = client.service.PaymentRequest(
             MERCHANT,
             price,
-            'description',
+            DESCRIPTION,
             user.email,
             f'0{user.phone}',
             CALLBACK,
