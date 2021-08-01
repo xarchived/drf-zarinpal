@@ -1,5 +1,6 @@
 from django.http import HttpResponseRedirect, HttpResponse
 from rest_framework import status
+from rest_framework.exceptions import APIException
 from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -23,7 +24,8 @@ class OrderPaymentRequestView(GenericAPIView):
         order_id = serializer.validated_data['order_id']
         order = Order.objects.get(pk=order_id)
         if order is None:
-            return Response({'error_msg': 'invalid order id'}, status=status.HTTP_404_NOT_FOUND)
+            raise APIException('Order not found')
+            # return Response({'error_msg': 'invalid order id'}, status=status.HTTP_404_NOT_FOUND)
 
         items = Item.objects.filter(order_id=order_id)
         user = order.user
@@ -46,7 +48,8 @@ class OrderPaymentRequestView(GenericAPIView):
 
         if result.Status == 100:
             return HttpResponseRedirect(redirect_to=f'https://www.zarinpal.com/pg/StartPay/{result.Authority}')
-        return Response({'error_code': result.Status}, status=status.HTTP_400_BAD_REQUEST)
+        raise APIException('Bad Request')
+        # return Response({'error_code': result.Status}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentVerificationView(APIView):
@@ -62,7 +65,7 @@ class PaymentVerificationView(APIView):
         if status_code != 'OK':
             return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code={status_code}')
 
-        amount = 0
+        # amount = 0
         payment = Payment.objects.get(identity_token=authority)
         order = Order.objects.get(pk=payment.order.pk)
         items = Item.objects.filter(order_id=order.pk)
