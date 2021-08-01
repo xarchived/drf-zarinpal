@@ -5,9 +5,10 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 from zeep import Client
 
-from purchase.models import Order, Payment, Item
+from purchase.models import Order, Payment
 from zarinpal.serializers import OrderPaymentSerializer
 from zarinpal.settings import MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
+from zarinpal.utils import calculate_total_amount
 
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
 
@@ -24,16 +25,14 @@ class OrderPaymentRequestView(GenericAPIView):
         if order is None:
             raise APIException('Order not found')
 
-        items = Item.objects.filter(order_id=order_id)
         user = order.user
-        email = user.email
-        amount = sum([item.price.amount for item in items])
+        price = calculate_total_amount(order_id)
 
         result = client.service.PaymentRequest(
             MERCHANT,
-            amount,
+            price,
             'description',
-            email,
+            user.email,
             f'0{user.phone}',
             CALLBACK,
         )
@@ -61,10 +60,9 @@ class PaymentVerificationView(APIView):
 
         payment = Payment.objects.get(identity_token=authority)
         order = Order.objects.get(pk=payment.order.pk)
-        items = Item.objects.filter(order_id=order.pk)
-        amount = sum([item.price.amount for item in items])
+        price = calculate_total_amount(order.pk)
 
-        result = client.service.PaymentVerification(MERCHANT, authority, amount)
+        result = client.service.PaymentVerification(MERCHANT, authority, price)
         if result.Status == 100:
             payment.ref_id = result.RefID
             payment.save()
