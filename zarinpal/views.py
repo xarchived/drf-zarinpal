@@ -59,8 +59,7 @@ class PaymentVerificationView(APIView):
             return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code={status_code}')
 
         payment = Payment.objects.get(identity_token=authority)
-        order = Order.objects.get(pk=payment.order.pk)
-        price = calculate_total_amount(order.pk)
+        price = calculate_total_amount(order_id=payment.order_id)
 
         result = client.service.PaymentVerification(MERCHANT, authority, price)
         if result.Status == 100:
