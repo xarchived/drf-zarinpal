@@ -37,7 +37,34 @@ class OrderPaymentRequestView(GenericAPIView):
             CALLBACK,
         )
 
-        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority, verify=False)
+        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority)
+        payment.save()
+
+        if result.Status == 100:
+            return HttpResponseRedirect(redirect_to=f'https://www.zarinpal.com/pg/StartPay/{result.Authority}')
+        raise PaymentError(result.Status)
+    def get(self, request: Request) -> HttpResponse:
+        serializer = self.get_serializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        order_id = serializer.validated_data['order_id']
+        order = Order.objects.get(pk=order_id)
+        if order is None:
+            raise OrderNotFoundError()
+
+        user = order.user
+        price = calculate_total_amount(order_id)
+
+        result = client.service.PaymentRequest(
+            MERCHANT,
+            price,
+            DESCRIPTION,
+            user.email,
+            f'0{user.phone}',
+            CALLBACK,
+        )
+
+        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority)
         payment.save()
 
         if result.Status == 100:
