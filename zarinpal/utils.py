@@ -1,6 +1,8 @@
-from purchase.models import Item
+from purchase.models import Order
 
 
 def calculate_total_amount(order_id: int) -> int:
-    items = Item.objects.filter(order_id=order_id)
-    return sum([item.price.amount for item in items])
+    order = Order.objects.get(pk=order_id)
+
+    total_price = sum([item.price.amount for item in order.items])
+    return total_price * order.duration
