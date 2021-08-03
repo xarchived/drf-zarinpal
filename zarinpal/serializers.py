@@ -6,5 +6,5 @@ from rest_framework.serializers import Serializer
 class OrderPaymentSerializer(Serializer):
     order_id = IntegerField(
         required=True,
-        min_value=1
+        min_value=1,
     )
