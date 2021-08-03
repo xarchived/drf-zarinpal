@@ -7,7 +7,7 @@ from zeep import Client
 from purchase.models import Order, Payment
 from zarinpal.exceptions import OrderNotFoundError, PaymentError
 from zarinpal.serializers import OrderPaymentSerializer
-from zarinpal.settings import DESCRIPTION, MERCHANT, CALLBACK, FAIL_REDIRECT, SUCCESS_REDIRECT
+from zarinpal.settings import DESCRIPTION, MERCHANT, CALLBACK, REDIRECT_URL
 from zarinpal.utils import calculate_total_amount
 
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
@@ -16,8 +16,8 @@ client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
 class OrderPaymentRequestView(GenericAPIView):
     serializer_class = OrderPaymentSerializer
 
-    def post(self, request: Request) -> HttpResponse:
-        serializer = self.get_serializer(data=request.data)
+    def get(self, request: Request) -> HttpResponse:
+        serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
         order_id = serializer.validated_data['order_id']
@@ -37,7 +37,7 @@ class OrderPaymentRequestView(GenericAPIView):
             CALLBACK,
         )
 
-        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority, verify=False)
+        payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=result.Authority)
         payment.save()
 
         if result.Status == 100:
@@ -52,11 +52,11 @@ class PaymentVerificationView(APIView):
         authority = request.GET.get('Authority')
 
         if not status_code:
-            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}')
+            return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}')
         if status_code == 'NOK':
-            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code=NOK')
+            return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}?status=nok')
         if status_code != 'OK':
-            return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?status_code={status_code}')
+            return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}?status={status_code}')
 
         payment = Payment.objects.get(identity_token=authority)
         price = calculate_total_amount(order_id=payment.order_id)
@@ -65,5 +65,5 @@ class PaymentVerificationView(APIView):
         if result.Status == 100:
             payment.ref_id = result.RefID
             payment.save()
-            return HttpResponseRedirect(redirect_to=f'{SUCCESS_REDIRECT}?authority={result.Authority}')
-        return HttpResponseRedirect(redirect_to=f'{FAIL_REDIRECT}?error_code={result.Status}')
+            return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}?ref_id={result.RefID}&status=ok')
+        return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}?error_code={result.Status}&status=nok')
