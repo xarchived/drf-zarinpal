@@ -5,10 +5,10 @@ from rest_framework.views import APIView
 from zeep import Client
 
 from purchase.models import Order, Payment
+from purchase.utils import calculate_total_amount
 from zarinpal.exceptions import OrderNotFoundError, PaymentError
 from zarinpal.serializers import OrderPaymentSerializer
 from zarinpal.settings import DESCRIPTION, MERCHANT, CALLBACK, REDIRECT_URL
-from zarinpal.utils import calculate_total_amount
 
 client = Client('https://www.zarinpal.com/pg/services/WebGate/wsdl')
 
