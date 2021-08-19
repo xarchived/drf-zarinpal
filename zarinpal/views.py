@@ -21,7 +21,7 @@ class OrderPaymentRequestView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         order_id = serializer.validated_data['order_id']
-        order = Order.objects.get(pk=order_id)
+        order = Order.objects.get(id=order_id)
         if order is None:
             raise OrderNotFoundError()
 
