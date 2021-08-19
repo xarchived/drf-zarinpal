@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from zeep import Client
 
 from purchase.models import Order, Payment
-from purchase.utils import calculate_total_amount
+from purchase.utils import order_total_price
 from zarinpal.exceptions import OrderNotFoundError, PaymentError
 from zarinpal.serializers import OrderPaymentSerializer
 from zarinpal.settings import DESCRIPTION, MERCHANT, CALLBACK, REDIRECT_URL
@@ -26,7 +26,7 @@ class OrderPaymentRequestView(GenericAPIView):
             raise OrderNotFoundError()
 
         user = order.user
-        price = calculate_total_amount(order_id)
+        price = order_total_price(order_id)
 
         result = client.service.PaymentRequest(
             MERCHANT,
@@ -59,7 +59,7 @@ class PaymentVerificationView(APIView):
             return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}?status={status_code}')
 
         payment = Payment.objects.get(identity_token=authority)
-        price = calculate_total_amount(order_id=payment.order_id)
+        price = order_total_price(order_id=payment.order_id)
 
         result = client.service.PaymentVerification(MERCHANT, authority, price)
         if result.Status == 100:
