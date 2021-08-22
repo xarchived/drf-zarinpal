@@ -29,7 +29,7 @@ class OrderPaymentRequestView(GenericAPIView):
         price = calculate_total_amount(order_id)
 
         if price == 0:
-            payment = Payment(order=order, type_id=Payment.Type.ONLINE, identity_token=0, ref_id=0)
+            payment = Payment(order=order, type_id=Payment.Type.FREE, identity_token=0, ref_id=0)
             payment.save()
             return HttpResponseRedirect(redirect_to=f'{REDIRECT_URL}?ref_id=0&status=ok')
 
